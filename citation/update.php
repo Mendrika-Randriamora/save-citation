@@ -15,6 +15,45 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["id"])) {
 
     $cite = $stmt->fetch();
 } elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    if ($_FILES["pict"]["tmp_name"]) {
+        $uploaddir = '/home/mendrika/Bureau/PHP/save-citation/pict/';
+        $uploadfile = $uploaddir . basename($_FILES['pict']['name']);
+        $file_path = './pict/' . basename($_FILES['pict']['name']);
+
+        if (move_uploaded_file($_FILES['pict']['tmp_name'], $uploadfile)) {
+            # Supprimer l'ancienne image
+            $request = "SELECT pict FROM citations WHERE id = :i";
+
+            $stmt = $pdo->prepare($request);
+            $stmt->execute(["i" => $_POST["id"]]);
+            $pict = $stmt->fetch()[0];
+            $old_pict = "." . $pict;
+
+            if (!unlink($old_pict)) {
+                echo "Erreur de suppression de l'ancienne image";
+                die();
+            };
+
+            $request = "UPDATE citations SET title = :t, author = :a, desc = :d, pict = :p, cite = :c WHERE id = :i";
+
+            $stmt = $pdo->prepare($request);
+
+            $stmt->execute([
+                "t" => $_POST["title"],
+                "a" => $_POST["author"] ?? "Unknow",
+                "d" => $_POST["desc"],
+                "p" => $file_path,
+                "c" => $_POST["content"],
+                "i" => $_POST["id"]
+            ]);
+
+            header("Location: /");
+            exit();
+        }
+    }
+
+    $request = "UPDATE citations SET title = :t, author = :a, desc = :d, cite = :c WHERE id = :i";
 } else {
     header("Location: /");
     exit();
@@ -82,20 +121,42 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["id"])) {
     <main>
         <div class="container">
 
-            <form class="text-white p-3" action="" method="post">
-                <div class="form-group">
-                    <label for="title">The title : </label>
-                    <input type="text" name="title" id="title" class="myinput" value="<?= $cite["title"] ?>">
+            <form class="text-white p-3" action="" method="post" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="title">Title:</label>
+                            <input type="text" name="title" id="title" class="myinput" value="<?= htmlspecialchars($cite["title"] ?? "") ?>" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="author">Author:</label>
+                            <input type="text" name="author" id="author" class="myinput" value="<?= htmlspecialchars($cite["author"] ?? "") ?>">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="desc">Description:</label>
+                            <input type="text" name="desc" id="desc" class="myinput" value="<?= htmlspecialchars($cite["desc"] ?? "") ?>" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="pict">Image:</label>
+                            <input type="file" name="pict" id="pict" class="myinput">
+                            <?php if (!empty($cite["pict"])): ?>
+                                <div class="mt-2">
+                                    <img src="<?= '.' . $cite["pict"] ?>" alt="Current image" style="max-width: 100px; border-radius: 8px;">
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <label for="content">Citation:</label>
+                            <textarea name="content" id="content" rows="8" class="myinput" required><?= htmlspecialchars($cite["cite"] ?? "") ?></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end pt-3">
+                            <input type="hidden" name="id" value="<?= $cite["id"] ?>">
+                            <input class="btn btn-primary rounded rounded-5" type="submit" value="Update">
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="title">The desc : </label>
-                    <input type="text" name="desc" id="desc" class="myinput" value="<?= $cite["desc"] ?>">
-                </div>
-                <div class="form-group">
-                    <label for="pict">The pict : </label>
-                    <input type="file" name="pict" id="pict" class="myinput form-floating">
-                </div>
-                <input type="range" value="50" class="form-range">
             </form>
         </div>
     </main>
