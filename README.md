@@ -1,5 +1,7 @@
 # Save Citation Project
 
+<img src="./assets/img/img1.png" alt="Current image" style="max-width: 100wh; border-radius: 8px;">
+
 ## Project Description
 
 Save Citation is a web application built with PHP and SQLite that allows users to create, view, update, and delete citations or quotes. Each citation can include a title, author, description, an image, and the quote content itself. The application provides a user-friendly interface for managing citations, with image upload support and a visually appealing display using Bootstrap.
